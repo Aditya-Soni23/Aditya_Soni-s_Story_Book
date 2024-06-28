@@ -1,0 +1,226 @@
+<!doctype html>
+<html>
+<head>
+<script type="text/javascript" src="https://code.jquery.com/jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="turn.min.js"></script>
+
+<style type="text/css">
+body {
+	background: linear-gradient(to right, #ffecd2 0%, #fcb69f 100%);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	margin: 0;
+	color: #333;
+	font-family: 'Arial', sans-serif;
+}
+
+#book {
+	width: 800px;
+	height: 500px;
+	position: relative;
+	box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#book .turn-page {
+	background-color: white;
+}
+
+#book .cover {
+	background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(119,121,9,1) 0%, rgba(5,160,44,1) 1%, rgba(7,142,126,1) 60%, rgba(0,212,255,1) 100%);
+	color: white;
+}
+
+#book .cover h1 {
+	text-align: center;
+	font-size: 50px;
+	margin: 0;
+	padding-top: 100px;
+}
+
+#book .cover p {
+	text-align: center;
+	font-size: 20px;
+	margin: 0;
+	padding-top: 20px;
+}
+
+#book .loader {
+	background-image: url(loader.gif);
+	width: 24px;
+	height: 24px;
+	display: block;
+	position: absolute;
+	top: 238px;
+	left: 188px;
+}
+
+#book .data {
+	text-align: center;
+	font-size: 24px;
+	color: #333;
+	line-height: 1.6;
+	padding: 20px;
+}
+
+.page-footer {
+	position: absolute;
+	bottom: 10px;
+	width: 100%;
+	text-align: center;
+	font-size: 18px;
+	color: #333;
+}
+
+#controls {
+	width: 800px;
+	text-align: center;
+	margin: 20px 0px;
+	font: 30px 'Arial', sans-serif;
+}
+
+#controls input, #controls label {
+	font: 30px 'Arial', sans-serif;
+}
+
+#book .odd {
+	background-image: linear-gradient(to left, #a1c4fd 0%, #c2e9fb 100%);
+}
+
+#book .even {
+	background-image: linear-gradient(to left, #a1c4fd 0%, #c2e9fb 100%);
+}
+
+#prev-button, #next-button {
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	background-color: rgba(0, 0, 0, 0.5);
+	color: white;
+	border: none;
+	padding: 10px;
+	cursor: pointer;
+	font-size: 24px;
+	z-index: 1000;
+}
+
+#prev-button {
+	left: -40px;
+}
+
+#next-button {
+	right: -40px;
+}
+
+#prev-button:hover, #next-button:hover {
+	background-color: rgba(0, 0, 0, 0.8);
+}
+
+footer {
+	margin-top: 20px;
+	font-size: 18px;
+	color: #555;
+}
+</style>
+</head>
+<body>
+<center>
+<div id="book">
+	<div class="cover">
+		<h1>Diamond Magic</h1>
+		<p>Written by Aditya Soni</p>
+	</div>
+</div>
+
+<div id="controls">
+	<label for="page-number">Page:</label> <input style="background-color: yellow;" type="text" size="3" id="page-number"> of <span id="number-pages"></span>
+</div>
+
+<button style="margin-left: 200px;" id="prev-button">&#8592;</button>
+<button style="margin-right: 200px;" id="next-button">&#8594;</button>
+
+<footer style="color: black; font-weight: bolder; width: 1500px; height: 20px; background: linear-gradient(90deg, rgba(2,0,36,1) 0%, rgba(119,121,9,1) 0%, rgba(5,160,44,1) 0%, rgba(136,7,142,1) 0%, rgba(0,212,255,1) 100%);">
+	Diamond Magic, Written by Aditya Soni
+</footer>
+</center>
+
+<audio id="turn-front-sound" src="turnfront.mp3"></audio>
+<audio id="turn-back-sound" src="turnback.mp3"></audio>
+
+<script type="text/javascript">
+
+	var numberOfPages = 10; 
+
+	var storyContent = [
+		"Page 1: Once upon a time, in a magical land far away, there lived a young boy named Alex.",
+		"Page 2: Alex had always been fascinated by the stories of the enchanted Diamond of Eternity.",
+		"Page 3: One day, while exploring the woods, Alex stumbled upon an old, mysterious map.<br><img src='https://www.investopedia.com/thmb/Z9hn3yJjTENp_e170q9z0c9ZpbM=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/GettyImages-83077314-31d4b4d009f443c8ac37ee30eec32800.jpg' alt='Map Image' style='width: 200px; height: 200px;' /><br>",
+		"Page 4: The map seemed to point to the location of the legendary Diamond of Eternity.",
+		"Page 5: Excited and curious, Alex decided to embark on an adventure to find the diamond.",
+		"Page 6: He packed his backpack with supplies and set off on his journey the very next morning.",
+		"Page 7: Along the way, Alex encountered various magical creatures and overcame many challenges.<br><img src='https://via.placeholder.com/150' alt='Magical Creature Image' />",
+		"Page 8: With each step, he felt he was getting closer to the diamond and its incredible power.",
+		"Page 9: Finally, after days of traveling, Alex reached a hidden cave shown on the map.",
+		"Page 10: Inside the cave, he found the Diamond of Eternity glowing brightly. His dream had come true."
+	];
+
+	function addPage(page, book) {
+		if (!book.turn('hasPage', page)) {
+			var content = storyContent[page - 1] || 'Content for page ' + page;
+			var element = $('<div />', {'class': 'page '+((page % 2 == 0) ? 'odd' : 'even'), 'id': 'page-'+page})
+				.html('<div class="data">'+content+'</div><div class="page-footer">Page ' + page + '</div>');
+			book.turn('addPage', element, page);
+		}
+	}
+
+	$(window).ready(function(){
+		$('#book').turn({
+			acceleration: true,
+			pages: numberOfPages,
+			elevation: 50,
+			gradients: !$.isTouch,
+			when: {
+				turning: function(e, page, view) {
+					var range = $(this).turn('range', page);
+					for (page = range[0]; page <= range[1]; page++) 
+						addPage(page, $(this));
+				},
+				turned: function(e, page) {
+					$('#page-number').val(page);
+				}
+			}
+		});
+
+		$('#number-pages').html(numberOfPages);
+
+		$('#page-number').keydown(function(e){
+			if (e.keyCode == 13)
+				$('#book').turn('page', $('#page-number').val());
+		});
+
+		$('#prev-button').click(function() {
+			$('#book').turn('previous');
+			document.getElementById('turn-back-sound').play();
+		});
+
+		$('#next-button').click(function() {
+			$('#book').turn('next');
+			document.getElementById('turn-front-sound').play();
+		});
+	});
+
+	$(window).bind('keydown', function(e){
+		if (e.target && e.target.tagName.toLowerCase() != 'input')
+			if (e.keyCode == 37) {
+				$('#book').turn('previous');
+				document.getElementById('turn-back-sound').play();
+			} else if (e.keyCode == 39) {
+				$('#book').turn('next');
+				document.getElementById('turn-front-sound').play();
+			}
+	});
+</script>
+</body>
+</html>
